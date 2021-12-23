@@ -1,6 +1,6 @@
 import Foundation
 
-class BingoBoard {
+class BingoBoard: CustomStringConvertible, NSCopying {
     var board : [Int]  = []
     init(board : [Int]) {
         self.board = board
@@ -39,22 +39,25 @@ class BingoBoard {
         return self.board.filter({x in x != -1}).reduce(0, {x, y in x + y})
     }
 
+    func copy(with zone: NSZone? = nil) -> Any {
+        let copy = BingoBoard(board: self.board)
+        return copy
+    }
+
     var description: String {
         var str = "\nBingoBoard:\n"
         for row in 0..<5 {
             str += String(format: "%02d %02d %02d %02d %02d",
                           self.board[row * 5 + 0], self.board[row * 5 + 1],
                           self.board[row * 5 + 2], self.board[row * 5 + 3],
-                          self.board[row * 5 + 4]);
+                          self.board[row * 5 + 4])
             if row < 4 {
                 str += "\n"
             }
         }
-        return str;
+        return str
     }
 }
-
-extension BingoBoard: CustomStringConvertible {}
 
 do {
     let input = try String(contentsOfFile: "./input.txt")
@@ -73,6 +76,15 @@ do {
             nums = []
         }
     }
+    let boards2 = boards.map({$0.copy() as! BingoBoard})
+    part1(draws: draws, boards: boards)
+    part2(draws: draws, boards: boards2)
+}
+catch {
+}
+
+
+func part1(draws: [Int], boards: [BingoBoard]) {
     for num in draws {
         for b in boards {
             b.draw(num)
@@ -80,10 +92,29 @@ do {
                 print(b)
                 print("num = \(num), b.sum() = \(b.sum())")
                 print("num * b.sum() = \(num * b.sum())")
-                exit(0);
+                return
             }
         }
     }
 }
-catch {
+
+func part2(draws: [Int], boards: [BingoBoard]) {
+    var boards = boards
+    var losers = boards.count
+    for num in draws {
+        for b in boards {
+            b.draw(num)
+            if b.won() {
+                if losers == 1 {
+                    print(b)
+                    print("num = \(num), b.sum() = \(b.sum())")
+                    print("num * b.sum() = \(num * b.sum())")
+                    return
+                } else {
+                    losers -= 1
+                }
+            }
+        }
+        boards = boards.filter({b in !b.won()})
+    }
 }
