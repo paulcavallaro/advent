@@ -1,13 +1,22 @@
 import Foundation
 
-struct Point {
+struct Point: Hashable {
     var x = 0
     var y = 0
+
+    static func == (lhs: Point, rhs: Point) -> Bool {
+        return lhs.x == rhs.x && lhs.y == rhs.y
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.x)
+        hasher.combine(self.y)
+    }
 }
 
 let input = try String(contentsOfFile: "./input.txt")
 let lines = input.components(separatedBy: "\n").filter({l in !l.isEmpty})
-var sparse_matrix: [Int:[Int:Int]] = [:] // sparse_matrix[x][y]
+var counts: [Point:Int] = [:]
 for var line in lines {
     line.removeAll(where: {c in c == " "})
     let points = line.components(separatedBy: "->")
@@ -20,23 +29,34 @@ for var line in lines {
         let min_y = min(start.y, end.y)
         let max_y = max(start.y, end.y)
         for y in min_y...max_y {
-            sparse_matrix[x, default: [:]][y, default: 0] += 1
+            counts[Point(x:x, y:y), default: 0] += 1
         }
     } else if start.y == end.y {
         let y = start.y
         let min_x = min(start.x, end.x)
         let max_x = max(start.x, end.x)
         for x in min_x...max_x {
-            sparse_matrix[x, default: [:]][y, default: 0] += 1
+            counts[Point(x:x, y:y), default: 0] += 1
         }
+    } else {
+        // Diagonal lines, comment out for just part 1
+        let (min_x_point, max_x_point) = start.x < end.x ?
+          (start, end) : (end, start)
+        // print("start: \(min_x_point) end: \(max_x_point)")
+        let diff = max_x_point.y - min_x_point.y
+        let y_range = stride(from:0, through:diff, by:(diff > 0 ? 1 : -1))
+        for (x, dy) in zip(min_x_point.x ... max_x_point.x, y_range) {
+            let y = min_x_point.y + dy
+            // print("diagonal point: \(Point(x:x, y:y))")
+            counts[Point(x:x, y:y), default: 0] += 1
+        }
+        // print("start: \(min_x_point) end: \(max_x_point)")
     }
 }
 var count = 0
-for (x, sparse_col) in sparse_matrix {
-    for (y, val) in sparse_col {
-        if val >= 2 {
-            count += 1
-        }
+for (_, val) in counts {
+    if val >= 2 {
+        count += 1
     }
 }
 print(count)
